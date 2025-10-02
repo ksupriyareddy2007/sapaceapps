@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Space Weather Adventure - Topics & Roles</title>
+  <link rel="stylesheet" href="home.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Space Weather Adventure</h1>
+    <p class="subtitle">Pick a topic, choose who you are — then listen to the conversation.</p>
+  </header>
+
+  <main class="container">
+    <section id="topicsGrid" class="grid"></section>
+  </main>
+
+  <!-- Role selection modal -->
+  <div id="roleModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card small">
+      <h2>Select your role</h2>
+      <div class="roles-row" id="rolesRow"></div>
+      <button id="roleCancel" class="ghost-btn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Conversation Scene -->
+  <div id="sceneModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card scene-card">
+      <button id="closeScene" class="close-btn">✕</button>
+
+      <!-- floating controls (top-right) -->
+      <div class="controls-floating" id="controlsFloating">
+        <button id="playBtn" title="Play">▶</button>
+        <button id="pauseBtn" title="Pause" disabled>⏸</button>
+        <button id="stopBtn" title="Stop" disabled>⏹</button>
+      </div>
+
+      <div class="scene speak-scene">
+        <div class="side left">
+          <div class="sun-wrap">
+            <svg viewBox="0 0 120 120" class="sun-svg" aria-hidden="true">
+              <defs>
+                <radialGradient id="g2" cx="50%" cy="45%">
+                  <stop offset="0%" stop-color="#fff59d" />
+                  <stop offset="60%" stop-color="#ffc107" />
+                  <stop offset="100%" stop-color="#ff5722" />
+                </radialGradient>
+              </defs>
+              <circle cx="60" cy="60" r="28" fill="url(#g2)" />
+            </svg>
+
+            <svg id="flareSVG" viewBox="0 0 220 120" class="flare-svg" aria-hidden="true">
+              <g id="flareGroup">
+                <ellipse cx="60" cy="60" rx="44" ry="28" class="flare-body"/>
+                <circle cx="46" cy="52" r="4" class="eye"/>
+                <circle cx="74" cy="52" r="4" class="eye"/>
+                <path id="flareMouth" d="M48 72 Q60 82 72 72" class="smile"/>
+                <g class="rays">
+                  <line x1="10" y1="18" x2="2" y2="2"/>
+                  <line x1="28" y1="8" x2="14" y2="0"/>
+                  <line x1="100" y1="6" x2="120" y2="-2"/>
+                </g>
+              </g>
+
+              <!-- pulse beam (animated, points to right side) -->
+              <line id="pulseLine" x1="104" y1="60" x2="300" y2="60" class="pulse-line" />
+            </svg>
+          </div>
+          <div class="label">Flare</div>
+        </div>
+
+        <div class="center-info">
+          <div class="status" id="statusText">Ready</div>
+        </div>
+
+        <div class="side right">
+          <div id="roleAvatar" class="avatar-wrap">
+            <!-- default farmer avatar (JS will replace for other roles) -->
+            <div class="farm-scene">
+              <!-- tractor -->
+              <svg id="tractor" viewBox="0 0 220 120" class="tractor-svg" aria-hidden="true">
+                <g id="tractorGroup">
+                  <rect x="18" y="46" width="120" height="40" rx="8" fill="#6b8e23" />
+                  <rect x="80" y="26" width="56" height="30" rx="6" fill="#2e5a2e" />
+                  <circle cx="46" cy="92" r="14" fill="#222" />
+                  <circle cx="172" cy="92" r="20" fill="#111" />
+                </g>
+              </svg>
+
+              <!-- GPS icon -->
+              <svg id="gpsIcon" viewBox="0 0 64 64" class="gps-svg" aria-hidden="true">
+                <circle cx="32" cy="32" r="10" fill="#ffffff" stroke="#0b3552" stroke-width="2"/>
+                <path class="gps-wave" d="M40 32c0 4.4-3.6 8-8 8" fill="none" stroke="#ff8f00" stroke-width="2"/>
+                <path class="gps-wave" d="M44 32c0 7.7-6.3 14-14 14" fill="none" stroke="#ffb74d" stroke-width="2"/>
+                <rect x="6" y="44" width="52" height="6" rx="3" fill="#cfe8ff" />
+                <text x="6" y="60" font-size="8" fill="#05233a">GPS</text>
+              </svg>
+            </div>
+          </div>
+          <div class="label" id="roleLabel">Farmer</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="home.js"></script>
+</body>
+</html>
