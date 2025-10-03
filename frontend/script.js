@@ -17,6 +17,15 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
         if (res.status === 200) {
             alert(`Welcome, ${data.user.name}! Redirecting to dashboard...`);
+            // inside your login success branch (where you get `data.user`)
+
+  
+        localStorage.setItem("sw_username", data.user.name);
+  
+    alert(`Welcome, ${data.user.name}! Redirecting to topics...`);
+    window.location.href = "home.html";
+
+
             window.location.href = "home.html"; // We'll create this next
         } else {
             alert(data.message);

@@ -20,6 +20,21 @@ const tractor = document.getElementById("tractor");
 
 let selectedTopic = null;
 let selectedRole = null;
+// --- Certificate / completion hook ---
+function onConversationComplete() {
+  // mark UI as finished
+  statusText.textContent = "Done";
+
+  // enable/disable controls
+  playBtn.disabled = false;
+  pauseBtn.disabled = true;
+  stopBtn.disabled = true;
+
+  // show certificate button (if exists)
+  if (typeof certBtn !== "undefined" && certBtn) {
+    certBtn.style.display = "inline-block";
+  }
+}
 
 const ROLES = [
   { id: "farmer", name: "Farmer" },
@@ -138,12 +153,16 @@ async function loadTopics(){
     const res = await fetch(`${API_ROOT}/topics`);
     const data = await res.json();
     const topics = data.topics || [];
+    // Save to global map for title lookup
+    window.topicsMap = {};
+    topics.forEach(t => window.topicsMap[t.id] = t);
     renderTopics(topics);
   } catch(err){
     topicsGrid.innerHTML = `<p style="color:#fff">Could not load topics — make sure backend is running.</p>`;
     console.error(err);
   }
 }
+
 
 function renderTopics(topics){
   topicsGrid.innerHTML = "";
@@ -309,7 +328,8 @@ function animateSpeaker(speaker, start, text = "") {
 // speak the sequence lines one-by-one
 function speakSequence() {
   if(idx >= sequence.length) {
-    statusText.textContent = "Done";
+    onConversationComplete();
+
     playBtn.disabled = false;
     pauseBtn.disabled = true;
     stopBtn.disabled = true;
@@ -345,6 +365,9 @@ function speakSequence() {
   currentUtterance = u;
   speechSynthesis.speak(u);
 }
+// initialization
+renderRoles();
+loadTopics();
 
 // controls
 function startSequence(){
@@ -406,4 +429,221 @@ loadTopics();
 // ensure voices are loaded (Chrome loads asynchronously)
 if (typeof speechSynthesis !== "undefined") {
   speechSynthesis.onvoiceschanged = () => {};
+}
+/* -------- Certificate feature: draw & download -------- */
+
+// We'll keep a topicsMap for quick title lookup (ensure loadTopics sets it)
+window.topicsMap = window.topicsMap || {}; // fallback
+
+// certificate UI elements
+const certBtn = document.getElementById("certBtn");
+const certModal = document.getElementById("certModal");
+const closeCert = document.getElementById("closeCert");
+const certCanvas = document.getElementById("certCanvas");
+const downloadCert = document.getElementById("downloadCert");
+const regenerateCert = document.getElementById("regenerateCert");
+
+// show cert button when sequence completes:
+// modify the place where you set statusText "Done" (inside speakSequence/onend) to also enable certBtn.
+// Example: when conversation finishes:
+function onConversationComplete() {
+  statusText.textContent = "Done";
+  playBtn.disabled = false;
+  pauseBtn.disabled = true;
+  stopBtn.disabled = true;
+
+  // show certificate button
+  if (certBtn) certBtn.style.display = "inline-block";
+}
+
+// Make sure your speakSequence() calls onConversationComplete() when sequence finishes
+// (If speakSequence already sets "Done", replace that with a call to onConversationComplete())
+
+// Utility to produce a short personalized summary
+function generateSummary(roleId, topicId) {
+  const roleName = (ROLES.find(r => r.id === roleId) || {}).name || roleId;
+  const topicTitle = (window.topicsMap && window.topicsMap[topicId] && window.topicsMap[topicId].title) || topicId;
+
+  // Some example role+topic templates:
+  const templates = {
+    farmer: {
+      "solar-flare": `${roleName} protected their fields by checking GPS and preparing backup plans.`,
+      cme: `${roleName} worked to keep pumps and power safe during the solar storm.`,
+      "solar-wind": `${roleName} watched weather sensors and adjusted tools carefully.`,
+      "solar-particles": `${roleName} learned that satellites and astronauts needed extra protection.`
+    },
+    pilot: {
+      "solar-flare": `${roleName} switched to backup instruments to keep flights safe.`,
+      cme: `${roleName} followed guidance and helped keep passengers safe during disturbances.`,
+      "solar-wind": `${roleName} monitored navigation and made smart route decisions.`,
+      "solar-particles": `${roleName} knew when to avoid high-latitude routes to stay safe.`
+    },
+    astronaut: {
+      "solar-flare": `${roleName} took shelter during high radiation and stayed safe aboard the spacecraft.`,
+      cme: `${roleName} learned how mission control protected equipment during big events.`,
+      "solar-wind": `${roleName} adapted routines for the steady space breeze.`,
+      "solar-particles": `${roleName} used protective shields to stay safe while working in space.`
+    },
+    photographer: {
+      "solar-flare": `${roleName} captured beautiful auroras and shared amazing photos!`,
+      cme: `${roleName} took stunning shots of glowing skies after the CME arrived.`,
+      "solar-wind": `${roleName} learned small changes can make lovely photos.`,
+      "solar-particles": `${roleName} kept watching the skies and captured lively space lights.`
+    }
+  };
+
+  const byRole = templates[roleId] || {};
+  return byRole[topicId] || `${roleName} learned about ${topicTitle} and helped others stay safe.`;
+}
+
+// draw certificate on canvas
+function drawCertificate(name, roleId, topicId, summary) {
+  const canvas = certCanvas;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // clear
+  ctx.clearRect(0, 0, W, H);
+
+  // background gradient
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#fdf6e3");
+  grad.addColorStop(0.6, "#fff");
+  grad.addColorStop(1, "#eaf6ff");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // decorative border
+  ctx.strokeStyle = "#ffb74d";
+  ctx.lineWidth = 18;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
+
+  // title
+  ctx.fillStyle = "#05233a";
+  ctx.font = "bold 56px Poppins, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Space Weather Hero", W / 2, 120);
+
+  // subtitle
+  ctx.fillStyle = "#0b3552";
+  ctx.font = "400 22px Poppins, sans-serif";
+  ctx.fillText("Certificate of Achievement", W / 2, 160);
+
+  // name plate
+  ctx.fillStyle = "#05233a";
+  ctx.font = "bold 48px Poppins, sans-serif";
+  ctx.fillText(name, W / 2, 260);
+
+  // role & topic line
+  const roleName = (ROLES.find(r => r.id === roleId) || {}).name || roleId;
+  const topicTitle = (window.topicsMap && window.topicsMap[topicId] && window.topicsMap[topicId].title) || topicId;
+  ctx.font = "600 24px Poppins, sans-serif";
+  ctx.fillText(`${roleName} — ${topicTitle}`, W / 2, 320);
+
+  // summary block (wrap text)
+  ctx.font = "400 22px Poppins, sans-serif";
+  ctx.fillStyle = "#214b5b";
+  const maxWidth = W - 240;
+  wrapText(ctx, summary, W / 2, 380, maxWidth, 36);
+
+  // badge / ribbon shape
+  ctx.beginPath();
+  ctx.fillStyle = "#ffcd39";
+  ctx.arc(W / 2, 520, 72, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#05233a";
+  ctx.font = "700 28px Poppins, sans-serif";
+  ctx.fillText("★ HERO ★", W / 2, 528);
+
+  // small signature and date
+  ctx.font = "400 18px Poppins, sans-serif";
+  ctx.fillText("Presented on " + new Date().toLocaleDateString(), W / 2, H - 120);
+  ctx.fillText("Mission: Space Weather Education", W / 2, H - 90);
+
+  // small footer note
+  ctx.font = "300 14px Poppins, sans-serif";
+  ctx.fillStyle = "#4a6b74";
+  ctx.fillText("Keep exploring the Sun safely — you're part of the team!", W / 2, H - 50);
+}
+
+// helper: wrap text centered
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let testLine, metrics, testWidth;
+  let currentY = y;
+  for (let n = 0; n < words.length; n++) {
+    testLine = line + words[n] + ' ';
+    metrics = ctx.measureText(testLine);
+    testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      ctx.textAlign = "center";
+      ctx.fillText(line.trim(), x, currentY);
+      line = words[n] + ' ';
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.textAlign = "center";
+  ctx.fillText(line.trim(), x, currentY);
+}
+
+// open certificate modal and draw
+function openCertificate() {
+  // get name from localStorage or ask
+  let name = localStorage.getItem("sw_username") || "";
+  if (!name) {
+    name = prompt("What's your name for the certificate?") || "Space Explorer";
+  }
+
+  const roleId = selectedRole || "farmer";
+  const topicId = selectedTopic || "solar-flare";
+  const summary = generateSummary(roleId, topicId);
+
+  drawCertificate(name, roleId, topicId, summary);
+  certModal.classList.remove("hidden");
+  certModal.setAttribute("aria-hidden", "false");
+}
+
+// download the current canvas
+function downloadCertificatePNG() {
+  const dataURL = certCanvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = dataURL;
+  const name = (localStorage.getItem("sw_username") || "space-hero").replace(/\s+/g, "-");
+  a.download = `${name}-space-weather-hero.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+// event bindings
+if (certBtn) certBtn.addEventListener("click", openCertificate);
+if (closeCert) closeCert.addEventListener("click", () => {
+  certModal.classList.add("hidden");
+  certModal.setAttribute("aria-hidden", "true");
+});
+if (downloadCert) downloadCert.addEventListener("click", downloadCertificatePNG);
+if (regenerateCert) regenerateCert.addEventListener("click", openCertificate);
+
+/* -------- integrate with conversation end -------- */
+
+// If your speakSequence sets statusText and disables buttons when done,
+// make sure to call onConversationComplete() there.
+// Example (if you used u.onend inside speakSequence), when sequence finishes:
+function ensureConversationCompleteHook() {
+  // This helper tries to detect the existing code's "Done" flow
+  // If you already set statusText="Done" in speakSequence, replace that with onConversationComplete()
+}
+
+const modal = document.getElementById("modal");
+const closeModalBtn = document.getElementById("closeModalBtn");
+
+if (closeModalBtn) {
+  closeModalBtn.addEventListener("click", () => {
+    stopSpeech(); // stops any audio
+    modal.style.display = "none"; // hides popup
+  });
 }

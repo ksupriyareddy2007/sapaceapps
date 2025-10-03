@@ -125,3 +125,23 @@ body{
   .side{width:100%}
   .controls-floating{right:10px; top:8px}
 }
+/* Certificate modal and canvas */
+#certModal .modal-card { background: linear-gradient(180deg,#fff,#fbfdff); border-radius:12px; }
+#certCanvas { background: transparent; }
+
+/* make the cert button match floating controls */
+.controls-floating #certBtn { font-size:18px; padding:6px 10px; background:#ffcd39; color:#05233a; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #333;
+}
+
+.close-btn:hover {
+  color: red;
+}
