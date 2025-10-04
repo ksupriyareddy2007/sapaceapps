@@ -1,256 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Space Weather Adventure</title>
-  <link rel="stylesheet" href="home.css" />
-  <style>
-    body { font-family: Arial, sans-serif; background:#f5faff; margin:0; }
-    header { background:#05233a; color:white; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
-    h1,h2,h3 { color:#05233a; }
-    .container { padding:18px; max-width:1100px; margin:0 auto; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:20px; }
-    .topic-btn {
-      padding:14px; border:none; border-radius:12px;
-      background:#0b3552; color:white; cursor:pointer;
-      font-size:16px; box-shadow:0 4px 10px rgba(0,0,0,0.2);
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
-    }
-    .topic-btn:hover { transform: translateY(-4px); box-shadow:0 8px 18px rgba(0,0,0,0.18); }
-    .role-btn {
-      padding:10px 16px; margin:6px;
-      border:none; border-radius:8px;
-      background:#0b3552; color:white; cursor:pointer;
-    }
-    .link-btn {
-      padding:10px 16px; background:#ff8f00;
-      color:white; border-radius:8px; text-decoration:none;
-      display:inline-block; cursor:pointer;
-    }
-    .modal {
-      position: fixed; top:0; left:0; right:0; bottom:0;
-      display:flex; align-items:center; justify-content:center;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-    }
-    .hidden { display:none; }
-    .modal-card {
-      background:white; padding:20px; border-radius:12px;
-      text-align:left; max-width: 700px; width: 90%;
-      box-shadow:0 6px 20px rgba(0,0,0,0.3);
-      animation: pop 0.2s ease;
-    }
-    .modal-card h3 { margin-top:0; color:#05233a; }
-    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
-    @keyframes pop { from { transform: scale(0.98); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .small-note { font-size:13px; color:#405b68; margin-top:10px; }
-    .roles-row { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:12px; }
-    .cocreation-area { margin-top:18px; text-align:center; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌞 Space Weather Adventure 🌌</title>
+<style>
+  body, html { margin:0; padding:0; font-family: Arial, sans-serif; height:100%; background:#051226; color:white; overflow-x:hidden;}
+  /* Animated stars background */
+  .stars, .stars2, .stars3 {
+    position:fixed; top:0; left:0; width:100%; height:100%; display:block;
+    background:transparent;
+    z-index:-1;
+  }
+  .container { max-width:1100px; margin:0 auto; padding:20px; text-align:center; }
+  h1 { color:#ffcc00; font-size:2rem; margin-bottom:8px; }
+  h2 { color:#cfe8ff; margin-bottom:12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:20px 0; }
+  .topic-btn, .role-btn, .link-btn { padding:12px 16px; border:none; border-radius:10px; cursor:pointer; font-size:14px; }
+  .topic-btn { background:#0b3552; color:white; transition: transform 0.15s; }
+  .topic-btn:hover { transform: translateY(-4px); }
+  .role-btn { background:#0b2740; color:white; margin:6px; }
+  .link-btn { background:#ff8f00; color:white; display:inline-block; text-decoration:none; margin:8px; }
+  .modal { position:fixed; top:0; left:0; right:0; bottom:0; display:flex; justify-content:center; align-items:center; background:rgba(0,0,0,0.5); z-index:100; }
+  .modal.hidden { display:none; }
+  .modal-card { background:white; color:#05233a; padding:20px; border-radius:12px; max-width:700px; width:90%; text-align:left; box-shadow:0 6px 20px rgba(0,0,0,0.3); }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .small-note { font-size:13px; color:#405b68; margin-top:10px; }
+</style>
 </head>
 <body>
 
-  <header>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;font-size:20px;">Space Weather Adventure</h1>
+<!-- Star layers -->
+<div class="stars"></div>
+<div class="stars2"></div>
+<div class="stars3"></div>
+
+<div class="container">
+  <h1>🌞 Space Weather Adventure 🌌</h1>
+  <h2>Choose a Space Weather Topic</h2>
+  <section id="topicsGrid" class="grid" aria-label="topics"></section>
+</div>
+
+<!-- Info Modal -->
+<div id="infoModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-card">
+    <h3 id="infoTitle">Topic title</h3>
+    <p id="infoBody">Short explanation about the topic will appear here.</p>
+    <p class="small-note">Read this explanation, then continue to choose a role.</p>
+    <div class="modal-actions">
+      <button id="infoCancel" class="link-btn" style="background:#777;">Close</button>
+      <button id="infoProceed" class="link-btn" style="background:#05233a;">Continue — Choose Role</button>
     </div>
+  </div>
+</div>
 
-    <nav style="display:flex;gap:10px;align-items:center;">
-      <a href="minigames.html" class="link-btn" id="miniGamesLink">🎮 Mini-Games</a>
-      <a href="#" class="link-btn" id="profileBtn" style="background:#05233a;">Profile</a>
-    </nav>
-  </header>
-
-  <main class="container">
-    <!-- Topic Selection -->
-    <h2 style="text-align:center;margin:20px 0;">Choose a Space Weather Topic 🌌</h2>
-    <section id="topicsGrid" class="grid" aria-label="topics"></section>
-
-    <!-- Info Modal: shows explanation of the topic first -->
-    <div id="infoModal" class="modal hidden" aria-hidden="true" role="dialog" aria-modal="true">
-      <div class="modal-card" id="infoCard">
-        <h3 id="infoTitle">Topic title</h3>
-        <p id="infoBody" style="font-size:15px;color:#2b4752;">Short explanation about the topic will appear here.</p>
-        <p class="small-note">Read this explanation, then continue to choose a role that fits how you'd like to explore the topic.</p>
-
-        <div class="modal-actions">
-          <button id="infoCancel" class="link-btn" style="background:#777;color:white;">Close</button>
-          <button id="infoProceed" class="link-btn" style="background:#05233a;">Continue — Choose role</button>
-        </div>
-      </div>
+<!-- Role Modal -->
+<div id="roleModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-card">
+    <h3>Select your role</h3>
+    <div id="rolesRow" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+    <div id="linksContainer" style="text-align:center; margin-top:18px;"></div>
+    <div class="modal-actions">
+      <button id="roleCancel" class="link-btn" style="background:#777;">Cancel</button>
     </div>
-
-    <!-- Role Selection Modal: opens after the info modal proceed -->
-    <div id="roleModal" class="modal hidden" aria-hidden="true" role="dialog" aria-modal="true">
-      <div class="modal-card small">
-        <h3>Select your role</h3>
-        <div class="roles-row" id="rolesRow"></div>
-
-        <div class="cocreation-area" id="cocreationContainer" style="display:none;"></div>
-
-        <div class="modal-actions" style="margin-top:16px;">
-          <button id="roleCancel" class="link-btn" style="background:#777;color:white;">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-  </main>
+  </div>
+</div>
 
 <script>
-  // display name -> canonical id maps (lowercase, hyphen)
-  const TOPIC_ID_MAP = {
-    "Solar flare": "solar-flare",
-    "Auroras": "solar-particles",         // map auroras to solar-particles dialogue (or change as needed)
-    "Magnetic Fields": "solar-wind",
-    "solar wind": "solar-wind",
-    "CMEs": "cme"
+// --- Topics and explanations ---
+const TOPIC_ID_MAP = {
+  "Solar flare":"solar-flare",
+  "Auroras":"solar-particles",
+  "Magnetic Fields":"solar-wind",
+  "solar wind":"solar-wind",
+  "CMEs":"cme"
+};
+const TOPIC_EXPLANATIONS = {
+  "solar-flare":"Solar flares are sudden bursts of energy from the Sun. They can disturb radio and GPS signals on Earth and create auroras.",
+  "cme":"Coronal Mass Ejections (CMEs) are large clouds of solar plasma that can push Earth's magnetic field.",
+  "solar-wind":"The solar wind is a steady stream of charged particles from the Sun, shaping Earth's magnetosphere.",
+  "solar-particles":"Energetic solar particles travel fast and can harm satellites and astronauts."
+};
+const ROLE_ID_MAP = { "Farmer":"farmer", "Pilot":"pilot", "Astronaut":"astronaut", "Power Grid Operator":"power-grid-operator" };
+
+// --- UI Elements ---
+const topics = ["Solar flare","Auroras","Magnetic Fields","solar wind","CMEs"];
+const topicsGrid = document.getElementById('topicsGrid');
+const infoModal = document.getElementById('infoModal');
+const infoTitle = document.getElementById('infoTitle');
+const infoBody = document.getElementById('infoBody');
+const infoCancel = document.getElementById('infoCancel');
+const infoProceed = document.getElementById('infoProceed');
+const roleModal = document.getElementById('roleModal');
+const rolesRow = document.getElementById('rolesRow');
+const linksContainer = document.getElementById('linksContainer');
+const roleCancel = document.getElementById('roleCancel');
+
+let pendingTopicDisplay = "";
+let pendingTopicId = "";
+
+// Render topic buttons
+topics.forEach(topic=>{
+  const btn=document.createElement('button');
+  btn.textContent=topic;
+  btn.className='topic-btn';
+  btn.onclick=()=>{
+    pendingTopicDisplay=topic;
+    pendingTopicId=TOPIC_ID_MAP[topic]||topic.toLowerCase().replace(/\s+/g,'-');
+    infoTitle.textContent=topic;
+    infoBody.textContent=TOPIC_EXPLANATIONS[pendingTopicId]||"Learn about this topic and choose a role.";
+    infoModal.classList.remove('hidden');
+    infoModal.setAttribute('aria-hidden','false');
   };
+  topicsGrid.appendChild(btn);
+});
 
-  // friendly short explanations for each display topic
-  const TOPIC_EXPLANATIONS = {
-    "solar-flare": "Solar flares are sudden bursts of energy from the Sun. They can temporarily disturb radio and GPS signals on Earth and cause dazzling auroras at high latitudes.",
-    "cme": "Coronal Mass Ejections (CMEs) are large clouds of solar plasma that can push on Earth's magnetic field. Strong CMEs may affect power systems and navigation.",
-    "solar-wind": "The solar wind is a steady stream of charged particles from the Sun. It shapes Earth's magnetosphere and helps create auroras when stronger streams arrive.",
-    "solar-particles": "Energetic solar particles travel fast and can harm satellites and astronauts. They often arrive during big flares and CMEs and are monitored closely."
-  };
+// Close info modal
+infoCancel.onclick=()=>{ infoModal.classList.add('hidden'); infoModal.setAttribute('aria-hidden','true'); };
 
-  // roles: display name -> canonical id
-  const ROLE_ID_MAP = {
-    "Farmer": "farmer",
-    "Pilot": "pilot",
-    "Astronaut": "astronaut",
-    "Power Grid Operator": "power-grid-operator"
-  };
+// Proceed to role selection
+infoProceed.onclick=()=>{
+  infoModal.classList.add('hidden'); infoModal.setAttribute('aria-hidden','true');
+  openRoleModal();
+};
 
-  // UI elements
-  const topics = ["Solar flare","Auroras","Magnetic Fields","solar wind","CMEs"];
-  const topicsGrid = document.getElementById('topicsGrid');
-  const infoModal = document.getElementById('infoModal');
-  const infoTitle = document.getElementById('infoTitle');
-  const infoBody = document.getElementById('infoBody');
-  const infoProceed = document.getElementById('infoProceed');
-  const infoCancel = document.getElementById('infoCancel');
-
-  const roleModal = document.getElementById('roleModal');
-  const rolesRow = document.getElementById('rolesRow');
-  const roleCancel = document.getElementById('roleCancel');
-  const cocreationContainer = document.getElementById('cocreationContainer');
-
-  let pendingTopicDisplay = "";   // the topic user clicked (display text)
-  let pendingTopicId = "";        // canonical topic id (normalized)
-  let chosenRoleId = "";          // canonical role id
-
-  // Render topic buttons
-  topics.forEach(topic => {
-    const btn = document.createElement('button');
-    btn.textContent = topic;
-    btn.className = 'topic-btn';
-    btn.addEventListener('click', () => {
-      // when clicked, show explanation modal first
-      pendingTopicDisplay = topic;
-      // map to canonical id; fallback to lowercase-hyphen version
-      pendingTopicId = TOPIC_ID_MAP[topic] || topic.toLowerCase().replace(/\s+/g, '-');
-      // set modal content
-      infoTitle.textContent = topic;
-      infoBody.textContent = TOPIC_EXPLANATIONS[pendingTopicId] || "This topic explores how the Sun affects Earth — choose a role to continue.";
-      // open info modal
-      infoModal.classList.remove('hidden');
-      infoModal.setAttribute('aria-hidden', 'false');
-    });
-    topicsGrid.appendChild(btn);
+// Open role modal
+function openRoleModal(){
+  rolesRow.innerHTML='';
+  linksContainer.innerHTML='';
+  Object.keys(ROLE_ID_MAP).forEach(display=>{
+    const btn=document.createElement('button');
+    btn.className='role-btn';
+    btn.textContent=display;
+    btn.dataset.roleId=ROLE_ID_MAP[display];
+    btn.onclick=onRoleChosen;
+    rolesRow.appendChild(btn);
   });
+  roleModal.classList.remove('hidden'); roleModal.setAttribute('aria-hidden','false');
+}
 
-  // Close info modal
-  infoCancel.addEventListener('click', () => {
-    infoModal.classList.add('hidden');
-    infoModal.setAttribute('aria-hidden', 'true');
-  });
+// Role chosen
+function onRoleChosen(e){
+  const roleBtn=e.currentTarget;
+  const chosenRoleId=roleBtn.dataset.roleId;
+  const chosenRoleDisplay=roleBtn.textContent;
+  const convUrl=`conversation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
+  const cocreateUrl=`cocreation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
+  const miniGameUrl=`minigames.html`;
+  linksContainer.innerHTML=`
+    <a href="${convUrl}" class="link-btn">🌞✨ Cosmic Conversations</a>
+    <a href="${cocreateUrl}" class="link-btn">Co-Create with AI 🎨</a>
+    <a href="${miniGameUrl}" class="link-btn">🎮 Mini-Games</a>
+    <p style="margin-top:8px; font-size:13px; color:#405b68;">Topic: <strong>${pendingTopicDisplay}</strong> · Role: <strong>${chosenRoleDisplay}</strong></p>
+  `;
+}
 
-  // When user proceeds from info -> show role modal
-  infoProceed.addEventListener('click', () => {
-    infoModal.classList.add('hidden');
-    infoModal.setAttribute('aria-hidden', 'true');
-    openRoleModal();
-  });
+// Cancel role modal
+roleCancel.onclick=()=>{ roleModal.classList.add('hidden'); roleModal.setAttribute('aria-hidden','true'); };
 
-  // Open role modal and render role buttons
-  function openRoleModal() {
-    // clear previous role elements and cocreation area
-    rolesRow.innerHTML = '';
-    cocreationContainer.style.display = 'none';
-    cocreationContainer.innerHTML = '';
-
-    // create role buttons
-    Object.keys(ROLE_ID_MAP).forEach(displayName => {
-      const id = ROLE_ID_MAP[displayName];
-      const btn = document.createElement('button');
-      btn.className = 'role-btn';
-      btn.textContent = displayName;
-      btn.dataset.roleId = id;
-      btn.addEventListener('click', onRoleChosen);
-      rolesRow.appendChild(btn);
-    });
-
-    // show modal
-    roleModal.classList.remove('hidden');
-    roleModal.setAttribute('aria-hidden', 'false');
-  }
-
-  // role selected handler
-  function onRoleChosen(e) {
-    const btn = e.currentTarget;
-    if (!btn) return;
-    chosenRoleId = btn.dataset.roleId;
-    const chosenRoleDisplay = btn.textContent || chosenRoleId;
-
-    // show Co-Create and Conversation links using canonical ids
-    const convUrl = `conversation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
-    const cocreateUrl = `cocreation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
-
-    cocreationContainer.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
-        <a href="${cocreateUrl}" class="link-btn" style="background:#ff8f00;">
-          Co-Create with AI 🎨 as ${escapeHtml(chosenRoleDisplay)}
-        </a>
-        <a href="${convUrl}" target="_blank" class="link-btn" style="background:#0b3552; text-align:center; display:inline-block;">
-          🌞✨ Cosmic Conversations
-        </a>
-        <div style="margin-top:10px; font-size:13px; color:#4d5960;">
-          Topic: <strong>${escapeHtml(pendingTopicDisplay)}</strong> · Role: <strong>${escapeHtml(chosenRoleDisplay)}</strong>
-        </div>
-      </div>
-    `;
-    cocreationContainer.style.display = 'block';
-  }
-
-  // Cancel role selection / close modal
-  roleCancel.addEventListener('click', () => {
-    roleModal.classList.add('hidden');
-    roleModal.setAttribute('aria-hidden', 'true');
-    cocreationContainer.style.display = 'none';
-  });
-
-  // Close modals when user clicks outside the card
-  document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.add('hidden');
-        modal.setAttribute('aria-hidden', 'true');
-      }
-    });
-  });
-
-  // small utility to avoid inserting raw HTML (used only for safe text)
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
 </script>
-
 </body>
 </html>
