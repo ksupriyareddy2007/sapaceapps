@@ -145,3 +145,19 @@ body{
 .close-btn:hover {
   color: red;
 }
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom, #021b33, #0a2f4e);
+  color: white;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.link-btn:hover, .topic-btn:hover, .role-btn:hover {
+  opacity: 0.9;
+}
+
+h1, h2, h3 {
+  color: #ffdd00;
+}

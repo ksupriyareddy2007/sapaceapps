@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Earth Shield Game</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#f7f9ff;margin:0;color:#05233a}
+  header{background:#05233a;color:white;padding:12px 16px;display:flex;justify-content:space-between}
+  .container{padding:18px;max-width:900px;margin:0 auto}
+  .arena{position:relative;background:#081b2b10;border-radius:12px;height:320px;overflow:hidden;border:2px solid #e6eef6}
+  .flare{position:absolute;width:28px;height:28px;border-radius:50%;background: radial-gradient(circle at 30% 30%, #fff1b8, #ff7043); box-shadow:0 6px 18px rgba(255,112,67,0.3)}
+  .shield{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;width:120px;height:18px;background:#4db6ac;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .link-btn{padding:8px 12px;background:#ff8f00;color:#05233a;border-radius:8px;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div>Earth Shield Game</div>
+  <div><a class="link-btn" href="minigames.html">← Back</a></div>
+</header>
+
+<main class="container">
+  <div>Age: <span id="ageDisplay">—</span></div>
+  <div class="arena" id="arena">
+    <div class="shield" id="shield">SHIELD</div>
+  </div>
+  <div class="controls">
+    <button id="activate" class="link-btn">Activate Shield (Click)</button>
+    <button id="restart" class="link-btn">Restart</button>
+    <div style="margin-left:12px;">Score: <span id="score">0</span></div>
+    <div style="margin-left:12px;">Hits needed: <span id="target">10</span></div>
+  </div>
+  <div id="message" style="margin-top:10px;font-weight:bold"></div>
+</main>
+
+<script>
+  function getAge() {
+    const url = new URL(location.href);
+    const a = url.searchParams.get('age');
+    if (a) return Number(a);
+    const stored = localStorage.getItem('swa_age');
+    return stored?Number(stored):8;
+  }
+  const age = getAge();
+  document.getElementById('ageDisplay').textContent = age;
+
+  // difficulty: spawn interval and speed
+  let spawnInterval = 1200; // ms
+  let fallSpeed = 1.6; // px per tick
+  let targetHits = 10;
+  if (age <=6) { spawnInterval = 1600; fallSpeed = 1.0; targetHits = 6; }
+  else if (age <=10) { spawnInterval = 1200; fallSpeed = 1.4; targetHits = 8; }
+  else if (age <=14) { spawnInterval = 900; fallSpeed = 2.2; targetHits = 10; }
+  else { spawnInterval = 700; fallSpeed = 2.6; targetHits = 12; }
+
+  const arena = document.getElementById('arena');
+  const shield = document.getElementById('shield');
+  const activate = document.getElementById('activate');
+  const restart = document.getElementById('restart');
+  const scoreEl = document.getElementById('score');
+  const targetEl = document.getElementById('target');
+  const message = document.getElementById('message');
+
+  targetEl.textContent = targetHits;
+
+  let score = 0;
+  let flares = [];
+  let spawnTimer = null;
+  let animTimer = null;
+  let shieldActive = false;
+
+  function spawnFlare() {
+    const f = document.createElement('div');
+    f.className = 'flare';
+    f.style.left = Math.random()*(arena.clientWidth-30) + 'px';
+    f.style.top = '-30px';
+    arena.appendChild(f);
+    flares.push(f);
+  }
+
+  function animate() {
+    // move flares
+    for (let i=flares.length-1;i>=0;i--){
+      const f = flares[i];
+      const y = parseFloat(f.style.top || 0) + fallSpeed;
+      f.style.top = y + 'px';
+      // collision with shield?
+      const shieldRect = shield.getBoundingClientRect();
+      const fRect = f.getBoundingClientRect();
+      const arenaRect = arena.getBoundingClientRect();
+
+      if (fRect.bottom >= shieldRect.top && fRect.left < shieldRect.right && fRect.right > shieldRect.left) {
+        // hit shield
+        if (shieldActive) {
+          // blocked
+          score++;
+          scoreEl.textContent = score;
+          arena.removeChild(f);
+          flares.splice(i,1);
+          if (score >= targetHits) {
+            win();
+            return;
+          }
+          continue;
+        }
+      }
+      // if out of arena bottom - missed
+      if (fRect.top > arenaRect.height + 20) {
+        // remove missed flare
+        arena.removeChild(f);
+        flares.splice(i,1);
+      }
+    }
+    animTimer = requestAnimationFrame(animate);
+  }
+
+  function startGame() {
+    stopGame();
+    score = 0;
+    scoreEl.textContent = score;
+    message.textContent = '';
+    spawnTimer = setInterval(spawnFlare, spawnInterval);
+    animTimer = requestAnimationFrame(animate);
+  }
+
+  function stopGame() {
+    clearInterval(spawnTimer);
+    spawnTimer = null;
+    if (animTimer) cancelAnimationFrame(animTimer);
+    animTimer = null;
+    // clear flares
+    flares.forEach(f=>f.remove());
+    flares = [];
+  }
+
+  function win() {
+    stopGame();
+    message.textContent = '🎉 Shield success — flares blocked!';
+  }
+
+  activate.addEventListener('mousedown', () => {
+    shieldActive = true;
+    shield.style.background = '#ff7043';
+  });
+  activate.addEventListener('mouseup', () => {
+    shieldActive = false;
+    shield.style.background = '#4db6ac';
+  });
+  activate.addEventListener('mouseleave', () => {
+    shieldActive = false;
+    shield.style.background = '#4db6ac';
+  });
+
+  // Allow moving shield with mouse on arena
+  arena.addEventListener('mousemove', (e) => {
+    const rect = arena.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    if (x < 60) x = 60;
+    if (x > rect.width-60) x = rect.width-60;
+    shield.style.left = x + 'px';
+  });
+
+  restart.addEventListener('click', startGame);
+
+  // init
+  startGame();
+
+</script>
+</body>
+</html>

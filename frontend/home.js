@@ -13,22 +13,26 @@ const stopBtn = document.getElementById("stopBtn");
 const statusText = document.getElementById("statusText");
 const roleAvatar = document.getElementById("roleAvatar");
 const roleLabel = document.getElementById("roleLabel");
-const flareGroup = document.getElementById("flareGroup");
-const pulseLine = document.getElementById("pulseLine");
-const gpsIcon = document.getElementById("gpsIcon");
-const tractor = document.getElementById("tractor");
+let flareGroup = document.getElementById("flareGroup");
+let pulseLine = document.getElementById("pulseLine");
+let gpsIcon = document.getElementById("gpsIcon");
+let tractor = document.getElementById("tractor");
 
 let selectedTopic = null;
 let selectedRole = null;
+let currentUtterance = null;
+let sequence = [];
+let idx = 0;
+
 // --- Certificate / completion hook ---
 function onConversationComplete() {
   // mark UI as finished
   statusText.textContent = "Done";
 
   // enable/disable controls
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-  stopBtn.disabled = true;
+  if (playBtn) playBtn.disabled = false;
+  if (pauseBtn) pauseBtn.disabled = true;
+  if (stopBtn) stopBtn.disabled = true;
 
   // show certificate button (if exists)
   if (typeof certBtn !== "undefined" && certBtn) {
@@ -142,6 +146,9 @@ function renderRoles() {
       selectedRole = r.id;
       openSceneFor(selectedTopic, selectedRole);
       hideRoleModal();
+
+      // Show extra buttons on homepage
+      showExtraButtons(r.name);
     };
     rolesRow.appendChild(b);
   });
@@ -158,13 +165,15 @@ async function loadTopics(){
     topics.forEach(t => window.topicsMap[t.id] = t);
     renderTopics(topics);
   } catch(err){
-    topicsGrid.innerHTML = `<p style="color:#fff">Could not load topics — make sure backend is running.</p>`;
+    if (topicsGrid) {
+      topicsGrid.innerHTML = '<p style="color:#fff">Could not load topics — make sure backend is running.</p>';
+    }
     console.error(err);
   }
 }
 
-
 function renderTopics(topics){
+  if (!topicsGrid) return;
   topicsGrid.innerHTML = "";
   topics.forEach(t => {
     const card = document.createElement("div");
@@ -185,36 +194,38 @@ function renderTopics(topics){
 
 // Show/hide role chooser
 function showRoleModal() {
+  if (!roleModal) return;
   roleModal.classList.remove("hidden");
   roleModal.setAttribute("aria-hidden","false");
 }
 function hideRoleModal(){
+  if (!roleModal) return;
   roleModal.classList.add("hidden");
   roleModal.setAttribute("aria-hidden","true");
 }
 
 // Scene logic
-let sequence = [];
-let idx = 0;
-let currentUtterance = null;
-
 function openSceneFor(topicId, roleId) {
   setRoleAvatar(roleId);
-  roleLabel.textContent = ROLES.find(r=>r.id===roleId).name;
+  const roleObj = ROLES.find(r=>r.id===roleId);
+  roleLabel.textContent = roleObj ? roleObj.name : roleId;
   sequence = (DIALOGUES[topicId] && DIALOGUES[topicId][roleId]) || [];
   idx = 0;
-  sceneModal.classList.remove("hidden");
-  sceneModal.setAttribute("aria-hidden","false");
-  statusText.textContent = "Ready";
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-  stopBtn.disabled = true;
+  if (sceneModal) {
+    sceneModal.classList.remove("hidden");
+    sceneModal.setAttribute("aria-hidden","false");
+  }
+  if (statusText) statusText.textContent = "Ready";
+  if (playBtn) playBtn.disabled = false;
+  if (pauseBtn) pauseBtn.disabled = true;
+  if (stopBtn) stopBtn.disabled = true;
 
   // auto-start the conversation
   setTimeout(() => startSequence(), 250);
 }
 
 function setRoleAvatar(roleId){
+  if(!roleAvatar) return;
   if(roleId === "farmer"){
     roleAvatar.innerHTML = `
       <div class="farm-scene">
@@ -278,6 +289,8 @@ function attachSceneElements(){
     pulseLine = document.getElementById("pulseLine");
     gpsIcon = document.getElementById("gpsIcon");
     tractor = document.getElementById("tractor");
+    // optional: cache flare mouth if present
+    flareGroup = document.getElementById("flareGroup");
   }, 40);
 }
 
@@ -310,6 +323,11 @@ function animateSpeaker(speaker, start, text = "") {
     } else {
       if(flareMouth) flareMouth.classList.remove("talking");
       if(pulseLine) pulseLine.classList.remove("pulse-animate");
+      // clear possible glitch classes
+      const gps = document.getElementById("gpsIcon");
+      const tr = document.getElementById("tractor");
+      if(gps) gps.classList.remove("gps-glitch");
+      if(tr) tr.classList.remove("tractor-wobble");
     }
   } else {
     // role speaks -> animate role mouth if present
@@ -329,10 +347,9 @@ function animateSpeaker(speaker, start, text = "") {
 function speakSequence() {
   if(idx >= sequence.length) {
     onConversationComplete();
-
-    playBtn.disabled = false;
-    pauseBtn.disabled = true;
-    stopBtn.disabled = true;
+    if (playBtn) playBtn.disabled = false;
+    if (pauseBtn) pauseBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = true;
     return;
   }
   const item = sequence[idx];
@@ -349,10 +366,10 @@ function speakSequence() {
 
   u.onstart = () => {
     animateSpeaker(item.speaker, true, item.text);
-    statusText.textContent = `${item.speaker === "flare" ? "Flare" : roleLabel.textContent} speaking...`;
-    playBtn.disabled = true;
-    pauseBtn.disabled = false;
-    stopBtn.disabled = false;
+    statusText.textContent = item.speaker === "flare" ? "Flare speaking..." : `${roleLabel.textContent} speaking...`;
+    if (playBtn) playBtn.disabled = true;
+    if (pauseBtn) pauseBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = false;
   };
   u.onend = () => {
     animateSpeaker(item.speaker, false, item.text);
@@ -365,6 +382,7 @@ function speakSequence() {
   currentUtterance = u;
   speechSynthesis.speak(u);
 }
+
 // initialization
 renderRoles();
 loadTopics();
@@ -375,61 +393,74 @@ function startSequence(){
   speakSequence();
 }
 
-playBtn.addEventListener("click", () => {
-  if(speechSynthesis.paused) {
-    speechSynthesis.resume();
-    statusText.textContent = "Resumed";
-    playBtn.disabled = true;
-    pauseBtn.disabled = false;
-    stopBtn.disabled = false;
-    return;
-  }
-  if(idx >= sequence.length) idx = 0;
-  speakSequence();
-});
+if (playBtn) {
+  playBtn.addEventListener("click", () => {
+    if (typeof speechSynthesis !== "undefined" && speechSynthesis.paused) {
+      speechSynthesis.resume();
+      statusText.textContent = "Resumed";
+      playBtn.disabled = true;
+      if (pauseBtn) pauseBtn.disabled = false;
+      if (stopBtn) stopBtn.disabled = false;
+      return;
+    }
+    if(idx >= sequence.length) idx = 0;
+    speakSequence();
+  });
+}
 
-pauseBtn.addEventListener("click", () => {
-  if(!speechSynthesis.speaking) return;
-  speechSynthesis.pause();
-  statusText.textContent = "Paused";
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-});
+if (pauseBtn) {
+  pauseBtn.addEventListener("click", () => {
+    if(!speechSynthesis.speaking) return;
+    speechSynthesis.pause();
+    statusText.textContent = "Paused";
+    if (playBtn) playBtn.disabled = false;
+    if (pauseBtn) pauseBtn.disabled = true;
+  });
+}
 
-stopBtn.addEventListener("click", () => {
-  speechSynthesis.cancel();
+if (stopBtn) {
+  stopBtn.addEventListener("click", () => {
+    stopSpeech();
+    statusText.textContent = "Stopped";
+    if (playBtn) playBtn.disabled = false;
+    if (pauseBtn) pauseBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = true;
+  });
+}
+
+// helper to stop speech & reset animations
+function stopSpeech() {
+  if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
   currentUtterance = null;
   idx = 0;
-  statusText.textContent = "Stopped";
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-  stopBtn.disabled = true;
-  // clear animations
   animateSpeaker("flare", false);
   animateSpeaker("role", false);
-});
+}
 
 // close scene
-closeScene.addEventListener("click", () => {
-  speechSynthesis.cancel();
-  sceneModal.classList.add("hidden");
-  sceneModal.setAttribute("aria-hidden","true");
-  statusText.textContent = "Ready";
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-  stopBtn.disabled = true;
-});
+if (closeScene) {
+  closeScene.addEventListener("click", () => {
+    stopSpeech();
+    if (sceneModal) {
+      sceneModal.classList.add("hidden");
+      sceneModal.setAttribute("aria-hidden","true");
+    }
+    if (statusText) statusText.textContent = "Ready";
+    if (playBtn) playBtn.disabled = false;
+    if (pauseBtn) pauseBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = true;
+  });
+}
 
 // role modal cancel
-roleCancel.addEventListener("click", hideRoleModal);
-
-renderRoles();
-loadTopics();
+if (roleCancel) roleCancel.addEventListener("click", hideRoleModal);
 
 // ensure voices are loaded (Chrome loads asynchronously)
 if (typeof speechSynthesis !== "undefined") {
+  // no-op handler - ensures onvoiceschanged is defined; pickVoice will work once voices are loaded
   speechSynthesis.onvoiceschanged = () => {};
 }
+
 /* -------- Certificate feature: draw & download -------- */
 
 // We'll keep a topicsMap for quick title lookup (ensure loadTopics sets it)
@@ -443,19 +474,6 @@ const certCanvas = document.getElementById("certCanvas");
 const downloadCert = document.getElementById("downloadCert");
 const regenerateCert = document.getElementById("regenerateCert");
 
-// show cert button when sequence completes:
-// modify the place where you set statusText "Done" (inside speakSequence/onend) to also enable certBtn.
-// Example: when conversation finishes:
-function onConversationComplete() {
-  statusText.textContent = "Done";
-  playBtn.disabled = false;
-  pauseBtn.disabled = true;
-  stopBtn.disabled = true;
-
-  // show certificate button
-  if (certBtn) certBtn.style.display = "inline-block";
-}
-
 // Make sure your speakSequence() calls onConversationComplete() when sequence finishes
 // (If speakSequence already sets "Done", replace that with a call to onConversationComplete())
 
@@ -468,25 +486,25 @@ function generateSummary(roleId, topicId) {
   const templates = {
     farmer: {
       "solar-flare": `${roleName} protected their fields by checking GPS and preparing backup plans.`,
-      cme: `${roleName} worked to keep pumps and power safe during the solar storm.`,
+      "cme": `${roleName} worked to keep pumps and power safe during the solar storm.`,
       "solar-wind": `${roleName} watched weather sensors and adjusted tools carefully.`,
       "solar-particles": `${roleName} learned that satellites and astronauts needed extra protection.`
     },
     pilot: {
       "solar-flare": `${roleName} switched to backup instruments to keep flights safe.`,
-      cme: `${roleName} followed guidance and helped keep passengers safe during disturbances.`,
+      "cme": `${roleName} followed guidance and helped keep passengers safe during disturbances.`,
       "solar-wind": `${roleName} monitored navigation and made smart route decisions.`,
       "solar-particles": `${roleName} knew when to avoid high-latitude routes to stay safe.`
     },
     astronaut: {
       "solar-flare": `${roleName} took shelter during high radiation and stayed safe aboard the spacecraft.`,
-      cme: `${roleName} learned how mission control protected equipment during big events.`,
+      "cme": `${roleName} learned how mission control protected equipment during big events.`,
       "solar-wind": `${roleName} adapted routines for the steady space breeze.`,
       "solar-particles": `${roleName} used protective shields to stay safe while working in space.`
     },
     photographer: {
       "solar-flare": `${roleName} captured beautiful auroras and shared amazing photos!`,
-      cme: `${roleName} took stunning shots of glowing skies after the CME arrived.`,
+      "cme": `${roleName} took stunning shots of glowing skies after the CME arrived.`,
       "solar-wind": `${roleName} learned small changes can make lovely photos.`,
       "solar-particles": `${roleName} kept watching the skies and captured lively space lights.`
     }
@@ -498,6 +516,7 @@ function generateSummary(roleId, topicId) {
 
 // draw certificate on canvas
 function drawCertificate(name, roleId, topicId, summary) {
+  if (!certCanvas) return;
   const canvas = certCanvas;
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
@@ -596,6 +615,7 @@ function openCertificate() {
   let name = localStorage.getItem("sw_username") || "";
   if (!name) {
     name = prompt("What's your name for the certificate?") || "Space Explorer";
+    try { localStorage.setItem("sw_username", name); } catch(e) { /* ignore */ }
   }
 
   const roleId = selectedRole || "farmer";
@@ -603,12 +623,15 @@ function openCertificate() {
   const summary = generateSummary(roleId, topicId);
 
   drawCertificate(name, roleId, topicId, summary);
-  certModal.classList.remove("hidden");
-  certModal.setAttribute("aria-hidden", "false");
+  if (certModal) {
+    certModal.classList.remove("hidden");
+    certModal.setAttribute("aria-hidden", "false");
+  }
 }
 
 // download the current canvas
 function downloadCertificatePNG() {
+  if (!certCanvas) return;
   const dataURL = certCanvas.toDataURL("image/png");
   const a = document.createElement("a");
   a.href = dataURL;
@@ -622,20 +645,18 @@ function downloadCertificatePNG() {
 // event bindings
 if (certBtn) certBtn.addEventListener("click", openCertificate);
 if (closeCert) closeCert.addEventListener("click", () => {
-  certModal.classList.add("hidden");
-  certModal.setAttribute("aria-hidden", "true");
+  if (certModal) {
+    certModal.classList.add("hidden");
+    certModal.setAttribute("aria-hidden", "true");
+  }
 });
 if (downloadCert) downloadCert.addEventListener("click", downloadCertificatePNG);
 if (regenerateCert) regenerateCert.addEventListener("click", openCertificate);
 
 /* -------- integrate with conversation end -------- */
 
-// If your speakSequence sets statusText and disables buttons when done,
-// make sure to call onConversationComplete() there.
-// Example (if you used u.onend inside speakSequence), when sequence finishes:
 function ensureConversationCompleteHook() {
-  // This helper tries to detect the existing code's "Done" flow
-  // If you already set statusText="Done" in speakSequence, replace that with onConversationComplete()
+  // helper left intentionally for future adjustments.
 }
 
 const modal = document.getElementById("modal");
@@ -644,6 +665,48 @@ const closeModalBtn = document.getElementById("closeModalBtn");
 if (closeModalBtn) {
   closeModalBtn.addEventListener("click", () => {
     stopSpeech(); // stops any audio
-    modal.style.display = "none"; // hides popup
+    if (modal) modal.style.display = "none"; // hides popup
   });
+}
+
+// Add Co-Create + Cosmic Conversations buttons after role is chosen
+function showExtraButtons(chosenRole) {
+  const cocreationContainer = document.getElementById("cocreationContainer");
+  if (!cocreationContainer) return;
+  if (!selectedTopic) {
+    console.warn("No topic selected yet!");
+    return;
+  }
+
+  // Encode role and topic for URL
+  const roleParam = encodeURIComponent(chosenRole.toLowerCase());
+  const topicParam = encodeURIComponent(selectedTopic);
+
+  // Create inner HTML safely
+  cocreationContainer.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <button id="openCoCreate" class="link-btn" style="background:#ff8f00;">
+        Co-Create with AI 🎨 as ${chosenRole}
+      </button>
+      <a href="conversation.html?role=${roleParam}&topic=${topicParam}" 
+         target="_blank" 
+         class="link-btn" 
+         style="background:#0b3552; text-align:center; display:inline-block;">
+        🌞✨ Cosmic Conversations
+      </a>
+    </div>
+  `;
+
+  // Make sure the button exists before attaching the event
+  const coCreateBtn = document.getElementById("openCoCreate");
+  if (coCreateBtn) {
+    coCreateBtn.addEventListener("click", () => {
+      const coCreateModal = document.getElementById("coCreateModal");
+      const ideaInput = document.getElementById("ideaInput");
+      if (coCreateModal && ideaInput) {
+        coCreateModal.classList.remove("hidden");
+        ideaInput.value = `Tell a short adventure about a ${chosenRole} during ${selectedTopic}`;
+      }
+    });
+  }
 }

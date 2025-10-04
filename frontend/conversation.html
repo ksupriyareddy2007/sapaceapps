@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🌞 Cosmic Conversations 🌌</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#0a1a2f; color:white; padding:20px; }
+    h1 { text-align:center; color:#ffcc00; margin-bottom:6px; }
+    .subhead { text-align:center; color:#cfe8ff; font-size:14px; margin-bottom:18px; opacity:0.9; }
+    .chat { max-width:820px; margin:20px auto; background:#14253d; padding:20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); }
+    .chat-box { display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow:auto; padding-right:6px; }
+    .message { margin:0; padding:10px 14px; border-radius:8px; max-width:80%; word-wrap:break-word; line-height:1.35; }
+    .flare { background:#ff6b35; align-self:flex-start; color:#0b1020; }
+    .role { background:#00bfae; align-self:flex-end; margin-left:auto; color:#012825; }
+    .meta { font-size:12px; color:#bcd8ff; margin-top:8px; text-align:center; }
+  </style>
+</head>
+<body>
+  <h1>🌞✨ Cosmic Conversations 🌌</h1>
+  <div id="subhead" class="subhead">A tiny roleplay about space weather</div>
+
+  <div class="chat">
+    <div id="chatBox" class="chat-box" role="log" aria-live="polite"></div>
+    <div id="meta" class="meta"></div>
+  </div>
+
+  <script>
+    // --- DIALOGUES object (all topics + roles) ---
+    const DIALOGUES = {
+      "solar-flare": {
+        "farmer": [
+          { speaker: "flare", text: "Hi little farmer! I'm Flare. I shine bright and sometimes make radio signals noisy." },
+          { speaker: "role", text: "Oh hi Flare! When you make signals noisy, my GPS tractor gets confused and my planting lines are off." },
+          { speaker: "flare", text: "I didn't mean to make trouble. When I send strong bursts, I can cause short GPS errors." },
+          { speaker: "role", text: "Please be gentle on my tools. I depend on GPS for accurate seeding and irrigation." },
+          { speaker: "flare", text: "Engineers and farmers work together — there are ways to protect equipment and watch my activity." }
+        ],
+        "pilot": [
+          { speaker: "flare", text: "Hey pilot! I'm Flare — I make sudden bursts of energy." },
+          { speaker: "role", text: "Hi Flare. Those bursts can block some radio communications; we switch to backup instruments." },
+          { speaker: "flare", text: "I can be quick and bright. Pilots take precautions so everyone stays safe." }
+        ],
+        "astronaut": [
+          { speaker: "flare", text: "Hello astronaut — I'm Flare. Sometimes I send strong radiation." },
+          { speaker: "role", text: "Hello Flare. On a spacewalk, we'd need shelter because your particles can be harmful." },
+          { speaker: "flare", text: "That's why mission teams watch me closely. Safety first!" }
+        ],
+        "photographer": [
+          { speaker: "flare", text: "Hi photographer — I'm Flare. I can paint the sky with colors." },
+          { speaker: "role", text: "That sounds amazing! I'd love to capture auroras when you visit." },
+          { speaker: "flare", text: "Come chase the lights — but remember, sometimes I also shake signals. Be prepared!" }
+        ]
+      },
+
+      "cme": {
+        "farmer": [
+          { speaker: "flare", text: "I'm Cee, a big cloud called a CME. I can push at Earth's magnetic bubble." },
+          { speaker: "role", text: "When you push the magnetosphere, power and electronics can flicker — that affects irrigation and pumps." },
+          { speaker: "flare", text: "Engineers protect power systems, and farmers prepare backup plans for important moments." }
+        ],
+        "pilot": [
+          { speaker: "flare", text: "Hello pilot — I am Cee, a huge bubble of gas. I can disturb navigation signals." },
+          { speaker: "role", text: "That means extra checks before flights. Thanks for the heads up, Cee." }
+        ],
+        "astronaut": [
+          { speaker: "flare", text: "Astronaut friend, I am Cee. My magnetic push can change space weather for a while." },
+          { speaker: "role", text: "Mission control monitors you closely. We may move systems to safe mode." }
+        ],
+        "photographer": [
+          { speaker: "flare", text: "Photographer — when I arrive, auroras can reach farther and glow bright." },
+          { speaker: "role", text: "Perfect for pictures! I'll be ready with my tripod and camera." }
+        ]
+      },
+
+      "solar-wind": {
+        "farmer": [
+          { speaker: "flare", text: "I'm Windy — a steady solar wind that blows tiny particles past Earth." },
+          { speaker: "role", text: "Windy, you gently change space; my sensors can notice small variations in signals." },
+          { speaker: "flare", text: "You notice me best when I push a little — I am usually gentle." }
+        ],
+        "pilot": [
+          { speaker: "flare", text: "Pilot, I'm Windy. I carry magnetic bits that can nudge signals a touch." },
+          { speaker: "role", text: "We keep track but it's often just a small change." }
+        ],
+        "astronaut": [
+          { speaker: "flare", text: "Astronaut, I'm Windy. I'm part of the background space weather." },
+          { speaker: "role", text: "We plan for your environment; thanks for the steady breeze." }
+        ],
+        "photographer": [
+          { speaker: "flare", text: "Photographer, I'm Windy. I'm quieter than flares and CMEs, but I help shape auroras too." },
+          { speaker: "role", text: "Cool — small changes can still make lovely skies." }
+        ]
+      },
+
+      "solar-particles": {
+        "farmer": [
+          { speaker: "flare", text: "I'm Sparky — fast particles from the Sun. I can be energetic and quick." },
+          { speaker: "role", text: "Sparky, you're mostly a worry for satellites and astronauts, not my fields." },
+          { speaker: "flare", text: "Right — we watch each other in space weather to keep people safe." }
+        ],
+        "pilot": [
+          { speaker: "flare", text: "Pilot, Sparky here. I'm a stream of fast particles sometimes sent by flares and CMEs." },
+          { speaker: "role", text: "We may adjust airline routes at high latitudes if you become strong." }
+        ],
+        "astronaut": [
+          { speaker: "flare", text: "Astronaut — I can be dangerous outside spacecraft; I travel very fast." },
+          { speaker: "role", text: "We'd shelter inside the vehicle; safety rules are strict for events like you." }
+        ],
+        "photographer": [
+          { speaker: "flare", text: "Photographer, Sparky says hello. I don't make pictures, but I make space lively." },
+          { speaker: "role", text: "I'll watch the skies carefully — thanks, Sparky!" }
+        ]
+      }
+    };
+
+    // --- Read role and topic from URL ---
+    const urlParams = new URLSearchParams(window.location.search);
+    // defaults first, then normalize so .toLowerCase() is always safe
+    const rawRole = urlParams.get("role") || "farmer";
+    const rawTopic = urlParams.get("topic") || "solar-flare";
+    const role = String(rawRole).toLowerCase();
+    const topic = String(rawTopic).toLowerCase();
+
+    // UI elements
+    const chatBox = document.getElementById("chatBox");
+    const subhead = document.getElementById("subhead");
+    const meta = document.getElementById("meta");
+
+    if (!chatBox) {
+      console.error("Missing #chatBox element");
+    } else {
+      // show chosen role/topic in the small header
+      const prettyRole = role.charAt(0).toUpperCase() + role.slice(1);
+      const prettyTopic = topic.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      if (subhead) subhead.textContent = `${prettyRole} — ${prettyTopic}`;
+
+      // pick dialogue safely; if missing, show fallback message
+      const dialogueSequence = (DIALOGUES[topic] && DIALOGUES[topic][role]) || [
+        { speaker: "flare", text: "Oops! No conversation found for this role/topic." }
+      ];
+
+      // render messages
+      chatBox.innerHTML = ""; // clear
+      dialogueSequence.forEach(msg => {
+        const div = document.createElement("div");
+        div.className = "message " + (msg.speaker === "flare" ? "flare" : "role");
+        // textContent protects against XSS if somebody supplies weird URL params
+        div.textContent = msg.text;
+        chatBox.appendChild(div);
+      });
+
+      // scroll to bottom (in case content is taller)
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // set metadata
+      if (meta) meta.textContent = `Role: ${prettyRole} · Topic: ${prettyTopic}`;
+    }
+  </script>
+</body>
+</html>

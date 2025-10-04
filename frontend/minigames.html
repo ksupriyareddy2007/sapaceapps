@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini-Games — Space Weather Adventure</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#eef8ff; margin:0; color:#05233a; }
+    header { background:#0b3552; color:white; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .container { padding:18px; max-width:1100px; margin:0 auto; }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:18px; }
+    .game-card {
+      background:white; padding:14px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.08);
+      text-align:left;
+    }
+    .game-card h3 { margin:6px 0; }
+    .link-btn { padding:10px 14px; background:#ff8f00; color:white; border-radius:8px; text-decoration:none; display:inline-block; margin-top:8px; }
+    label { display:block; margin-top:8px; }
+    input[type="number"] { padding:8px; border-radius:8px; border:1px solid #ccc; width:120px; }
+    small { color:#235; display:block; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>Mini-Games</strong></div>
+    <div><a href="home.html" class="link-btn" style="background:#05233a;">← Back Home</a></div>
+  </header>
+
+  <main class="container">
+    <h2>Choose age (so games adapt)</h2>
+    <div>
+      <label for="ageInput">Child's age (years)</label>
+      <input id="ageInput" type="number" min="3" max="18" placeholder="e.g. 8" />
+      <button id="saveAge" class="link-btn">Save Age</button>
+      <small id="ageHint">Saved age will be passed to each game page.</small>
+    </div>
+
+    <div class="card-grid" style="margin-top:18px;">
+      <div class="game-card">
+        <h3>Power Grid Game</h3>
+        <p>Fix the grid before the city goes dark. Difficulty adjusts by age.</p>
+        <a id="playPowerGrid" class="link-btn" href="#">Play</a>
+      </div>
+
+      <div class="game-card">
+        <h3>GPS Tractor Game</h3>
+        <p>Choose the correct tractor path. Each run is randomized.</p>
+        <a id="playGPS" class="link-btn" href="#">Play</a>
+      </div>
+
+      <div class="game-card">
+        <h3>Earth Shield Game</h3>
+        <p>Raise the shield to block flares. Speed and frequency adapt to age.</p>
+        <a id="playEarthShield" class="link-btn" href="#">Play</a>
+      </div>
+    </div>
+  </main>
+
+<script>
+  // Save/retrieve age to localStorage and pass via query string to game pages
+  const ageInput = document.getElementById('ageInput');
+  const saveAgeBtn = document.getElementById('saveAge');
+  const ageHint = document.getElementById('ageHint');
+
+  function getSavedAge() {
+    const a = localStorage.getItem('swa_age');
+    return a ? Number(a) : null;
+  }
+  function setSavedAge(v) {
+    localStorage.setItem('swa_age', String(v));
+  }
+
+  const saved = getSavedAge();
+  if (saved) ageInput.value = saved;
+
+  saveAgeBtn.addEventListener('click', () => {
+    const v = Number(ageInput.value);
+    if (!v || v < 3 || v > 18) {
+      alert('Please enter a valid age between 3 and 18.');
+      return;
+    }
+    setSavedAge(v);
+    ageHint.textContent = `Saved age: ${v}. This will be used by the games.`;
+  });
+
+  function buildHref(page) {
+    const age = getSavedAge() || Number(ageInput.value) || '';
+    const qs = age ? '?age=' + encodeURIComponent(age) : '';
+    return page + qs;
+  }
+
+  document.getElementById('playPowerGrid').href = buildHref('powergrid.html');
+  document.getElementById('playGPS').href = buildHref('gps.html');
+  document.getElementById('playEarthShield').href = buildHref('earthshield.html');
+
+  // Update links if user changes input (not yet saved) for quick play
+  ageInput.addEventListener('input', () => {
+    document.getElementById('playPowerGrid').href = buildHref('powergrid.html');
+    document.getElementById('playGPS').href = buildHref('gps.html');
+    document.getElementById('playEarthShield').href = buildHref('earthshield.html');
+  });
+</script>
+</body>
+</html>

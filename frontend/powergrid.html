@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Power Grid Game</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#fffef8;margin:0;color:#05233a}
+  header{background:#05233a;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+  .container{padding:18px;max-width:900px;margin:0 auto}
+  .info{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  .grid{display:flex;flex-wrap:wrap;gap:12px}
+  .switch{width:90px;height:60px;border-radius:10px;background:#dfe7ee;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,0.08)}
+  .on{background:#a6e6a1}
+  .timer{font-weight:bold}
+  .controls{margin-top:12px}
+  .link-btn{padding:8px 12px;background:#ff8f00;color:#05233a;border-radius:8px;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div>Power Grid Game</div>
+  <div><a class="link-btn" href="minigames.html">← Back</a></div>
+</header>
+
+<main class="container">
+  <div class="info">
+    <div>Age: <span id="ageDisplay">—</span></div>
+    <div class="timer">Time left: <span id="timeLeft">—</span>s</div>
+    <div>Switches On: <span id="onCount">0</span>/<span id="goalCount">—</span></div>
+  </div>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="controls">
+    <button id="restart" class="link-btn">Restart</button>
+    <button id="autoHint" class="link-btn" style="background:#0b3552;color:white;">Hint</button>
+    <div id="message" style="margin-top:12px;font-weight:bold"></div>
+  </div>
+</main>
+
+<script>
+  // Read age from URL or localStorage
+  function getAge() {
+    const url = new URL(location.href);
+    const a = url.searchParams.get('age');
+    if (a) return Number(a);
+    const stored = localStorage.getItem('swa_age');
+    return stored ? Number(stored) : null;
+  }
+  const age = getAge() || 8;
+  document.getElementById('ageDisplay').textContent = age;
+
+  // Difficulty rules
+  let config = { switches: 6, time: 20 };
+  if (age <= 6) { config = { switches: 4, time: 30 }; }
+  else if (age <= 10) { config = { switches: 6, time: 22 }; }
+  else if (age <= 14) { config = { switches: 8, time: 18 }; }
+  else { config = { switches: 10, time: 14 }; }
+
+  const grid = document.getElementById('grid');
+  const timeLeftEl = document.getElementById('timeLeft');
+  const onCountEl = document.getElementById('onCount');
+  const goalCountEl = document.getElementById('goalCount');
+  const message = document.getElementById('message');
+
+  let switches = [];
+  let timer = config.time;
+  let intervalId = null;
+
+  function buildGrid() {
+    grid.innerHTML = '';
+    switches = [];
+    for (let i=0;i<config.switches;i++){
+      const div = document.createElement('div');
+      div.className = 'switch';
+      div.innerHTML = `<div>OFF</div>`;
+      div.dataset.on = '0';
+      div.addEventListener('click', () => {
+        if (div.dataset.on === '0') {
+          div.dataset.on = '1';
+          div.classList.add('on');
+          div.innerHTML = `<div>ON</div>`;
+        } else {
+          div.dataset.on = '0';
+          div.classList.remove('on');
+          div.innerHTML = `<div>OFF</div>`;
+        }
+        updateCounts();
+        checkWin();
+      });
+      switches.push(div);
+      grid.appendChild(div);
+    }
+    goalCountEl.textContent = config.switches;
+    updateCounts();
+  }
+
+  function updateCounts() {
+    const on = switches.filter(s=>s.dataset.on==='1').length;
+    onCountEl.textContent = on;
+  }
+
+  function startTimer() {
+    clearInterval(intervalId);
+    timer = config.time;
+    timeLeftEl.textContent = timer;
+    intervalId = setInterval(() => {
+      timer--;
+      timeLeftEl.textContent = timer;
+      if (timer <= 0) {
+        clearInterval(intervalId);
+        lose();
+      }
+    }, 1000);
+  }
+
+  function checkWin() {
+    const on = switches.filter(s=>s.dataset.on==='1').length;
+    if (on === config.switches) {
+      clearInterval(intervalId);
+      win();
+    }
+  }
+
+  function win() {
+    message.textContent = '🎉 Great job — grid restored!';
+  }
+  function lose() {
+    message.textContent = '⚠ Time\'s up — outage! Try again.';
+  }
+
+  document.getElementById('restart').addEventListener('click', () => {
+    message.textContent = '';
+    buildGrid();
+    startTimer();
+  });
+
+  document.getElementById('autoHint').addEventListener('click', () => {
+    // simple hint: toggle one remaining off switch to on (to encourage)
+    const off = switches.find(s=>s.dataset.on==='0');
+    if (off) {
+      off.click();
+    }
+  });
+
+  // init
+  buildGrid();
+  startTimer();
+</script>
+</body>
+</html>
