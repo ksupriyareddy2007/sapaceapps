@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Co-Create with AI</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5faff; margin:0; padding:20px; }
+    h1 { color:#05233a; text-align:center; }
+    textarea { width:90%; height:150px; padding:10px; font-size:16px; border-radius:8px; display:block; margin:20px auto; }
+    button { padding:12px 20px; font-size:16px; border:none; border-radius:8px; background:#ff8f00; color:white; cursor:pointer; display:block; margin:0 auto; }
+    #storyOutput { margin-top:20px; text-align:left; color:#05233a; font-size:18px; line-height:1.6; white-space:pre-line; min-height:120px; max-width:800px; margin-left:auto; margin-right:auto; }
+    .typing { border-right: 2px solid #05233a; animation: blink 0.7s steps(2) infinite; }
+    @keyframes blink { 50% { border-color: transparent; } }
+  </style>
+</head>
+<body>
+
+  <h1>🚀 Co-Create with AI 🎨</h1>
+  <p style="text-align:center;">Type your ideas below (e.g., "make the Sun wear sunglasses 😎")</p>
+
+  <textarea id="ideaInput" placeholder="Enter your creative idea here..."></textarea>
+  <button id="generateStoryBtn">Generate Story</button>
+
+  <div id="storyOutput"></div>
+
+  <script>
+    function typeWriterEffect(text, element) {
+      element.textContent = "";
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, 35);
+        } else {
+          element.classList.remove("typing");
+        }
+      }
+      element.classList.add("typing");
+      typing();
+    }
+
+    document.getElementById('generateStoryBtn').addEventListener('click', () => {
+      const idea = document.getElementById('ideaInput').value.trim();
+      const output = document.getElementById('storyOutput');
+
+      if(idea === ""){
+        output.textContent = "⚠ Please enter an idea first!";
+        return;
+      }
+
+      const story = `Once upon a time, during an incredible space adventure, a brave explorer faced challenges head-on. 
+Inspired by your idea — "${idea}" — the adventure took an unexpected twist! 
+The sky shimmered with colors, and new solutions were discovered to keep everyone safe. 
+Together, they turned the cosmic challenge into a fun learning experience.`;
+
+      typeWriterEffect(story, output);
+    });
+  </script>
+
+</body>
+</html>

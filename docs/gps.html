@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>GPS Tractor Game</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#f0fff7;margin:0;color:#05233a}
+  header{background:#0b3552;color:white;padding:12px 16px;display:flex;justify-content:space-between}
+  .container{padding:18px;max-width:800px;margin:0 auto}
+  .paths{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .path-btn{flex:1;padding:20px;border-radius:12px;background:white;cursor:pointer;border:2px solid transparent}
+  .path-btn:hover{transform:translateY(-4px)}
+  .correct{border-color: #4caf50}
+  .wrong{border-color: #e53935}
+  .link-btn{padding:8px 12px;background:#ff8f00;color:#05233a;border-radius:8px;text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div>GPS Tractor Game</div>
+  <div><a class="link-btn" href="minigames.html">← Back</a></div>
+</header>
+
+<main class="container">
+  <div>Age: <span id="ageDisplay">—</span></div>
+  <h3>Which tractor path is correct?</h3>
+  <div id="paths" class="paths"></div>
+  <div style="margin-top:14px;">
+    <button id="shuffle" class="link-btn">Shuffle</button>
+    <div id="result" style="margin-top:12px;font-weight:bold"></div>
+  </div>
+</main>
+
+<script>
+  function getAge() {
+    const url = new URL(location.href);
+    const a = url.searchParams.get('age');
+    if (a) return Number(a);
+    const stored = localStorage.getItem('swa_age');
+    return stored?Number(stored):8;
+  }
+  const age = getAge();
+  document.getElementById('ageDisplay').textContent = age;
+
+  let choices = 3;
+  if (age <=6) choices = 2;
+  else if (age <=10) choices = 3;
+  else if (age <=14) choices = 4;
+  else choices = 4;
+
+  const pathsDiv = document.getElementById('paths');
+  const result = document.getElementById('result');
+
+  function render() {
+    pathsDiv.innerHTML = '';
+    const correctIndex = Math.floor(Math.random()*choices);
+    for (let i=0;i<choices;i++){
+      const btn = document.createElement('div');
+      btn.className = 'path-btn';
+      btn.textContent = 'Path ' + (i+1);
+      btn.addEventListener('click', () => {
+        if (i === correctIndex) {
+          btn.classList.add('correct');
+          result.textContent = '✅ Nice! That was the right path.';
+        } else {
+          btn.classList.add('wrong');
+          result.textContent = '❌ Oops — that path is blocked. Try again!';
+        }
+        // reveal correct
+        const all = pathsDiv.querySelectorAll('.path-btn');
+        all[correctIndex].classList.add('correct');
+      });
+      pathsDiv.appendChild(btn);
+    }
+    result.textContent = '';
+  }
+
+  document.getElementById('shuffle').addEventListener('click', render);
+
+  render();
+</script>
+</body>
+</html>

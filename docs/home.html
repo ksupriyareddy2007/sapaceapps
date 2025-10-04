@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌞 Space Weather Adventure 🌌</title>
+<style>
+  body, html { margin:0; padding:0; font-family: Arial, sans-serif; height:100%; background:#051226; color:white; overflow-x:hidden;}
+  /* Animated stars background */
+  .stars, .stars2, .stars3 {
+    position:fixed; top:0; left:0; width:100%; height:100%; display:block;
+    background:transparent;
+    z-index:-1;
+  }
+  .container { max-width:1100px; margin:0 auto; padding:20px; text-align:center; }
+  h1 { color:#ffcc00; font-size:2rem; margin-bottom:8px; }
+  h2 { color:#cfe8ff; margin-bottom:12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:20px 0; }
+  .topic-btn, .role-btn, .link-btn { padding:12px 16px; border:none; border-radius:10px; cursor:pointer; font-size:14px; }
+  .topic-btn { background:#0b3552; color:white; transition: transform 0.15s; }
+  .topic-btn:hover { transform: translateY(-4px); }
+  .role-btn { background:#0b2740; color:white; margin:6px; }
+  .link-btn { background:#ff8f00; color:white; display:inline-block; text-decoration:none; margin:8px; }
+  .modal { position:fixed; top:0; left:0; right:0; bottom:0; display:flex; justify-content:center; align-items:center; background:rgba(0,0,0,0.5); z-index:100; }
+  .modal.hidden { display:none; }
+  .modal-card { background:white; color:#05233a; padding:20px; border-radius:12px; max-width:700px; width:90%; text-align:left; box-shadow:0 6px 20px rgba(0,0,0,0.3); }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .small-note { font-size:13px; color:#405b68; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<!-- Star layers -->
+<div class="stars"></div>
+<div class="stars2"></div>
+<div class="stars3"></div>
+
+<div class="container">
+  <h1>🌞 Space Weather Adventure 🌌</h1>
+  <h2>Choose a Space Weather Topic</h2>
+  <section id="topicsGrid" class="grid" aria-label="topics"></section>
+</div>
+
+<!-- Info Modal -->
+<div id="infoModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-card">
+    <h3 id="infoTitle">Topic title</h3>
+    <p id="infoBody">Short explanation about the topic will appear here.</p>
+    <p class="small-note">Read this explanation, then continue to choose a role.</p>
+    <div class="modal-actions">
+      <button id="infoCancel" class="link-btn" style="background:#777;">Close</button>
+      <button id="infoProceed" class="link-btn" style="background:#05233a;">Continue — Choose Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div id="roleModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-card">
+    <h3>Select your role</h3>
+    <div id="rolesRow" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+    <div id="linksContainer" style="text-align:center; margin-top:18px;"></div>
+    <div class="modal-actions">
+      <button id="roleCancel" class="link-btn" style="background:#777;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Topics and explanations ---
+const TOPIC_ID_MAP = {
+  "Solar flare":"solar-flare",
+  "Auroras":"solar-particles",
+  "Magnetic Fields":"solar-wind",
+  "solar wind":"solar-wind",
+  "CMEs":"cme"
+};
+const TOPIC_EXPLANATIONS = {
+  "solar-flare":"Solar flares are sudden bursts of energy from the Sun. They can disturb radio and GPS signals on Earth and create auroras.",
+  "cme":"Coronal Mass Ejections (CMEs) are large clouds of solar plasma that can push Earth's magnetic field.",
+  "solar-wind":"The solar wind is a steady stream of charged particles from the Sun, shaping Earth's magnetosphere.",
+  "solar-particles":"Energetic solar particles travel fast and can harm satellites and astronauts."
+};
+const ROLE_ID_MAP = { "Farmer":"farmer", "Pilot":"pilot", "Astronaut":"astronaut", "Power Grid Operator":"power-grid-operator" };
+
+// --- UI Elements ---
+const topics = ["Solar flare","Auroras","Magnetic Fields","solar wind","CMEs"];
+const topicsGrid = document.getElementById('topicsGrid');
+const infoModal = document.getElementById('infoModal');
+const infoTitle = document.getElementById('infoTitle');
+const infoBody = document.getElementById('infoBody');
+const infoCancel = document.getElementById('infoCancel');
+const infoProceed = document.getElementById('infoProceed');
+const roleModal = document.getElementById('roleModal');
+const rolesRow = document.getElementById('rolesRow');
+const linksContainer = document.getElementById('linksContainer');
+const roleCancel = document.getElementById('roleCancel');
+
+let pendingTopicDisplay = "";
+let pendingTopicId = "";
+
+// Render topic buttons
+topics.forEach(topic=>{
+  const btn=document.createElement('button');
+  btn.textContent=topic;
+  btn.className='topic-btn';
+  btn.onclick=()=>{
+    pendingTopicDisplay=topic;
+    pendingTopicId=TOPIC_ID_MAP[topic]||topic.toLowerCase().replace(/\s+/g,'-');
+    infoTitle.textContent=topic;
+    infoBody.textContent=TOPIC_EXPLANATIONS[pendingTopicId]||"Learn about this topic and choose a role.";
+    infoModal.classList.remove('hidden');
+    infoModal.setAttribute('aria-hidden','false');
+  };
+  topicsGrid.appendChild(btn);
+});
+
+// Close info modal
+infoCancel.onclick=()=>{ infoModal.classList.add('hidden'); infoModal.setAttribute('aria-hidden','true'); };
+
+// Proceed to role selection
+infoProceed.onclick=()=>{
+  infoModal.classList.add('hidden'); infoModal.setAttribute('aria-hidden','true');
+  openRoleModal();
+};
+
+// Open role modal
+function openRoleModal(){
+  rolesRow.innerHTML='';
+  linksContainer.innerHTML='';
+  Object.keys(ROLE_ID_MAP).forEach(display=>{
+    const btn=document.createElement('button');
+    btn.className='role-btn';
+    btn.textContent=display;
+    btn.dataset.roleId=ROLE_ID_MAP[display];
+    btn.onclick=onRoleChosen;
+    rolesRow.appendChild(btn);
+  });
+  roleModal.classList.remove('hidden'); roleModal.setAttribute('aria-hidden','false');
+}
+
+// Role chosen
+function onRoleChosen(e){
+  const roleBtn=e.currentTarget;
+  const chosenRoleId=roleBtn.dataset.roleId;
+  const chosenRoleDisplay=roleBtn.textContent;
+  const convUrl=`conversation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
+  const cocreateUrl=`cocreation.html?role=${encodeURIComponent(chosenRoleId)}&topic=${encodeURIComponent(pendingTopicId)}`;
+  const miniGameUrl=`minigames.html`;
+  linksContainer.innerHTML=`
+    <a href="${convUrl}" class="link-btn">🌞✨ Cosmic Conversations</a>
+    <a href="${cocreateUrl}" class="link-btn">Co-Create with AI 🎨</a>
+    <a href="${miniGameUrl}" class="link-btn">🎮 Mini-Games</a>
+    <p style="margin-top:8px; font-size:13px; color:#405b68;">Topic: <strong>${pendingTopicDisplay}</strong> · Role: <strong>${chosenRoleDisplay}</strong></p>
+  `;
+}
+
+// Cancel role modal
+roleCancel.onclick=()=>{ roleModal.classList.add('hidden'); roleModal.setAttribute('aria-hidden','true'); };
+
+</script>
+</body>
+</html>
